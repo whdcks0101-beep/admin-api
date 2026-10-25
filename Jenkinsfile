@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent{
+       label 'admin-api-build'
+    }
 
     options {
         skipDefaultCheckout(true)

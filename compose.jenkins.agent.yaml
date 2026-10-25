@@ -1,0 +1,28 @@
+services:
+  agent:
+    image: admin-api-jenkins-agent:local
+    build:
+      context: ./docker/jenkins-agent
+    container_name: admin-api-jenkins-agent
+    init: true
+    environment:
+      TZ: Asia/Seoul
+      GRADLE_USER_HOME: /home/jenkins/agent/.gradle
+      JENKINS_SECRET: ${JENKINS_AGENT_SECRET:?Enter the agent secret using scripts/Start-JenkinsAgent.ps1}
+    command:
+      - -url
+      - http://jenkins:8080/
+      - -name
+      - admin-api-agent
+      - -webSocket
+      - -workDir
+      - /home/jenkins/agent
+    volumes:
+      - jenkins-agent-home:/home/jenkins/agent
+      - jenkins-agent-metadata:/home/jenkins/.jenkins
+    restart: unless-stopped
+    stop_grace_period: 60s
+
+volumes:
+  jenkins-agent-home:
+  jenkins-agent-metadata:

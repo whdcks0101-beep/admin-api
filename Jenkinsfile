@@ -7,6 +7,7 @@ pipeline {
         skipDefaultCheckout(true)
         timeout(time: 30, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
     }
 
     stages {
@@ -51,6 +52,27 @@ pipeline {
                 '''
             }
         }    
+
+        stage('Deploy') {
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: 'k8s-admin-portfolio',
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+                    sh '''
+                        kubectl -n admin-portfolio set image \
+                            deployment/backend \
+                            backend="admin-api:ci-${BUILD_NUMBER}"
+
+                        kubectl -n admin-portfolio rollout status \
+                            deployment/backend \
+                            --timeout=180s
+                    '''
+                }
+            }
+        }        
 
     }
 }

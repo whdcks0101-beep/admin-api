@@ -1,0 +1,17 @@
+name: admin-api-ci
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk21
+    container_name: admin-api-jenkins
+    ports:
+      - "127.0.0.1:8090:8080"
+    environment:
+      TZ: Asia/Seoul
+    volumes:
+      - jenkins-home:/var/jenkins_home
+    restart: unless-stopped
+    stop_grace_period: 60s
+
+volumes:
+  jenkins-home:

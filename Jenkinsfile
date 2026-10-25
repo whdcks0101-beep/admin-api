@@ -1,6 +1,6 @@
 pipeline {
-    agent{
-       label 'admin-api-build'
+    agent {
+        label 'admin-api-build'
     }
 
     options {
@@ -20,29 +20,28 @@ pipeline {
                 '''
             }
         }
-    }
-
-    stage('Test') {
-        steps {
-            sh 'sh ./gradlew --no-daemon clean test'
-        }
-        post {
-            always {
-                junit 'build/test-results/test/*.xml'
+        stage('Test') {
+            steps {
+                sh 'sh ./gradlew --no-daemon clean test'
+            }
+            post {
+                always {
+                    junit 'build/test-results/test/*.xml'
+                }
             }
         }
-    }
 
-    stage('Build JAR') {
-        steps {
-            sh 'sh ./gradlew --no-daemon bootJar'
-        }
-        post {
-            success {
-                archiveArtifacts(
-                    artifacts: 'build/libs/*.jar',
-                    fingerprint: true
-                )
+        stage('Build JAR') {
+            steps {
+                sh 'sh ./gradlew --no-daemon bootJar'
+            }
+            post {
+                success {
+                    archiveArtifacts(
+                        artifacts: 'build/libs/*.jar',
+                        fingerprint: true
+                    )
+                }
             }
         }
     }

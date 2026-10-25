@@ -16,7 +16,7 @@ try {
         docker compose -f compose.jenkins.yaml -f compose.jenkins.agent.yaml config --quiet
         if ($LASTEXITCODE -ne 0) { throw 'Compose validation failed.' }
 
-        docker compose -f compose.jenkins.yaml -f compose.jenkins.agent.yaml up -d --no-deps agent
+        docker compose -f compose.jenkins.yaml -f compose.jenkins.agent.yaml up -d --build --no-deps agent
         if ($LASTEXITCODE -ne 0) { throw 'Starting the Jenkins agent failed.' }
     } finally {
         Pop-Location

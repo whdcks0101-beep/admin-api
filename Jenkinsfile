@@ -44,5 +44,13 @@ pipeline {
                 }
             }
         }
+        stage('Docker Build') {
+            steps {
+                sh '''
+                    docker build -t "admin-api:ci-${BUILD_NUMBER}" .
+                '''
+            }
+        }    
+
     }
 }

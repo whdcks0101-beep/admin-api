@@ -5,9 +5,13 @@ services:
       context: ./docker/jenkins-agent
     container_name: admin-api-jenkins-agent
     init: true
+    # Docker Desktop's socket has group ID 0. This grants Docker engine access.
+    group_add:
+      - "0"
     environment:
       TZ: Asia/Seoul
       GRADLE_USER_HOME: /home/jenkins/agent/.gradle
+      DOCKER_HOST: unix:///var/run/docker.sock
       JENKINS_SECRET: ${JENKINS_AGENT_SECRET:?Enter the agent secret using scripts/Start-JenkinsAgent.ps1}
     command:
       - -url
@@ -20,6 +24,7 @@ services:
     volumes:
       - jenkins-agent-home:/home/jenkins/agent
       - jenkins-agent-metadata:/home/jenkins/.jenkins
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     stop_grace_period: 60s
 

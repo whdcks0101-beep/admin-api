@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: admin-portfolio
+  labels:
+    app.kubernetes.io/name: admin-api
+    app.kubernetes.io/part-of: admin-portfolio
+data:
+  # Reuse the existing cache and explicit OIDC registration configuration.
+  SPRING_PROFILES_ACTIVE: "local,docker"
+  TZ: "Asia/Seoul"
+
+  # Local Docker Desktop lab: infrastructure still runs in Compose.
+  SPRING_DATASOURCE_URL: "jdbc:mysql://host.docker.internal:3306/admin_portfolio?serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+  SPRING_DATASOURCE_USERNAME: "admin"
+  SPRING_DATA_REDIS_HOST: "host.docker.internal"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_KAFKA_BOOTSTRAPSERVERS: "host.docker.internal:29092"
+
+  # Browser-facing issuer and authorization URL stay on the host address.
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUERURI: "http://localhost:8180/realms/portfolio"
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATIONURI: "http://localhost:8180/realms/portfolio/protocol/openid-connect/auth"
+
+  # These endpoints are called by the backend Pod, not the browser.
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKENURI: "http://host.docker.internal:8180/realms/portfolio/protocol/openid-connect/token"
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USERINFOURI: "http://host.docker.internal:8180/realms/portfolio/protocol/openid-connect/userinfo"
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWKSETURI: "http://host.docker.internal:8180/realms/portfolio/protocol/openid-connect/certs"

@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: network-check
+  namespace: admin-portfolio
+  labels:
+    app.kubernetes.io/name: network-check
+    app.kubernetes.io/part-of: admin-portfolio
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  containers:
+    - name: network-check
+      image: admin-api:local
+      imagePullPolicy: Never
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          failed=0
+          for target in mysql:3306 redis:6379 kafka:9092; do
+            service_name="${target%:*}"
+            port="${target##*:}"
+            if timeout 5 bash -c "exec 3<>/dev/tcp/host.docker.internal/$port"; then
+              echo "PASS TCP $service_name host.docker.internal:$port"
+            else
+              echo "FAIL TCP $service_name host.docker.internal:$port"
+              failed=1
+            fi
+          done
+          if curl --fail --silent --show-error --connect-timeout 3 --max-time 5 \
+              --output /dev/null \
+              http://host.docker.internal:8180/realms/portfolio/.well-known/openid-configuration; then
+            echo "PASS HTTP Keycloak discovery"
+          else
+            echo "FAIL HTTP Keycloak discovery"
+            failed=1
+          fi
+          exit "$failed"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 32Mi
+        limits:
+          cpu: 250m
+          memory: 128Mi

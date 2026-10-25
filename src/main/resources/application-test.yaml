@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:admin-api-test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+  flyway:
+    enabled: false
+
+  kafka:
+    listener:
+      # 일반 애플리케이션 테스트에서는 외부 Kafka 소비자를 시작하지 않는다.
+      auto-startup: false

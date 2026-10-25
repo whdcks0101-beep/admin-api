@@ -1,0 +1,90 @@
+plugins {
+	id 'java'
+	id 'eclipse'
+	id 'org.springframework.boot' version '4.1.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.portfolio'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-flyway'
+	implementation 'org.flywaydb:flyway-mysql'
+	implementation 'io.github.openfeign.querydsl:querydsl-jpa:7.1'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+	testRuntimeOnly 'com.h2database:h2'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+	annotationProcessor 'io.github.openfeign.querydsl:querydsl-apt:7.1:jpa'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client-test'
+	implementation 'org.springframework.boot:spring-boot-starter-session-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-kafka'
+	testImplementation 'org.springframework.boot:spring-boot-starter-kafka-test'
+	testImplementation 'org.testcontainers:testcontainers-mysql'
+	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'		
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// Q클래스는 compileJava의 annotation processor가 생성합니다.
+// Eclipse에서 수동 추가한 소스 경로가 Gradle Refresh 때 사라지지 않도록 관리합니다.
+def generatedQuerydslPath = 'build/generated/sources/annotationProcessor/java/main'
+
+eclipse {
+	// Buildship 동기화 전에 Q클래스를 생성합니다. 변경이 없으면 UP-TO-DATE입니다.
+	synchronizationTasks tasks.named('compileJava')
+
+	classpath {
+		file.whenMerged { classpath ->
+			// 기존 수동 등록이나 반복 동기화로 같은 경로가 중복되지 않게 합니다.
+			classpath.entries.removeAll { entry ->
+				entry.kind == 'src' && entry.path == generatedQuerydslPath
+			}
+			def generatedSource = new org.gradle.plugins.ide.eclipse.model.SourceFolder(
+					generatedQuerydslPath, 'bin/main')
+			generatedSource.entryAttributes['gradle_scope'] = 'main'
+			generatedSource.entryAttributes['gradle_used_by_scope'] = 'main,test'
+			classpath.entries.add(generatedSource)
+		}
+	}
+}
+
+// IDE 동기화뿐 아니라 CLI로 Eclipse 메타데이터를 만들 때도 생성 순서를 보장합니다.
+tasks.named('eclipseClasspath') {
+	dependsOn tasks.named('compileJava')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    if (!options.compilerArgs.contains('-parameters')) {
+        options.compilerArgs.add('-parameters')
+    }
+}

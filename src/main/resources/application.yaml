@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: admin-api
+  profiles:
+    default: local
+  jpa:
+    open-in-view: false
+
+management:
+  endpoints:
+   web:
+    exposure:
+      include: health
+
+  endpoint:
+   health:
+    show-details: never
+    show-components: never
+    probes:
+     enabled: true

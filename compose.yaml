@@ -1,0 +1,109 @@
+services:
+  backend:
+    image: admin-api:local
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: "local,docker"
+      SPRING_DATASOURCE_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be set}"
+      KEYCLOAK_CLIENT_SECRET: "${KEYCLOAK_CLIENT_SECRET:?KEYCLOAK_CLIENT_SECRET must be set}"
+      TZ: Asia/Seoul
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "3", "http://localhost:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  mysql:
+    image: mysql:8.4
+    container_name: admin-api-mysql
+    environment:
+      MYSQL_DATABASE: admin_portfolio
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be set}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}"
+      TZ: Asia/Seoul
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$${MYSQL_PASSWORD}" mysqladmin ping -h localhost -u"$${MYSQL_USER}" --silent']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.0
+    container_name: admin-api-keycloak
+    command: ["start-dev"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: kc-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${KC_BOOTSTRAP_ADMIN_PASSWORD:?KC_BOOTSTRAP_ADMIN_PASSWORD must be set}"
+      KC_HOSTNAME: http://localhost:8180
+    ports:
+      - "127.0.0.1:8180:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+
+  redis:
+    image: redis:8.4
+    container_name: admin-api-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:4.2.2
+    container_name: admin-api-kafka
+    ports:
+      - "127.0.0.1:9092:9092"
+      - "127.0.0.1:29092:29092"
+    environment:
+      CLUSTER_ID: "5L6g3nShT-eMCtK--X86sw"
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+
+      KAFKA_LISTENERS: "EXTERNAL://:9092,INTERNAL://:19092,K8S://:29092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "EXTERNAL://localhost:9092,INTERNAL://kafka:19092,K8S://host.docker.internal:29092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT,K8S:PLAINTEXT,CONTROLLER:PLAINTEXT"
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+
+      KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+
+    volumes:
+      - kafka-data:/tmp/kraft-combined-logs
+
+volumes:
+  mysql-data:
+  keycloak-data:
+  redis-data:
+  kafka-data:
+    external: true
+    name: admin-api-kafka-data

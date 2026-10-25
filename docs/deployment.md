@@ -2,6 +2,8 @@
 
 명령은 프로젝트 최상위 폴더의 Windows PowerShell에서 실행합니다. Kubernetes 명령은 로컬 클러스터인 `docker-desktop`을 명시합니다.
 
+현재 코드 변경 후 배포는 [Jenkins 파이프라인](jenkins.md)의 **지금 빌드**로 실행합니다. 아래 최초 설치·수동 업데이트 절차와 구분하며, Jenkins는 `admin-api:ci-빌드번호`로 이미지를 교체합니다.
+
 ## 현재 구성
 
 ```text
@@ -20,7 +22,7 @@ React 개발 서버 localhost:5173
 | Namespace | `k8s/namespace.yaml` — `admin-portfolio` |
 | 일반 설정 | `k8s/backend-configmap.yaml` — `backend-config` |
 | 민감한 설정 | 클러스터의 `backend-secret` — 실제 값을 담은 YAML은 저장하지 않음 |
-| 백엔드 실행 | `k8s/backend-deployment.yaml` — 이미지 `admin-api:v3`, Pod 2개 |
+| 백엔드 실행 | `k8s/backend-deployment.yaml` — 최초 준비 이미지 `admin-api:v3`, Pod 2개; 이후 Jenkins에서 `ci-빌드번호`로 변경 |
 | 외부 연결 | `k8s/backend-service.yaml` — LoadBalancer, 포트 8080 |
 | 일회성 연결 점검 | `k8s/diagnostics/network-check.yaml` — 배포 필수 항목 아님 |
 
@@ -168,14 +170,16 @@ docker compose ps
 kubectl --context docker-desktop get nodes
 kubectl --context docker-desktop -n admin-portfolio get secret backend-secret
 kubectl --context docker-desktop apply -f k8s/backend-configmap.yaml
-kubectl --context docker-desktop apply -f k8s/backend-deployment.yaml
+kubectl --context docker-desktop -n admin-portfolio scale deployment/backend --replicas=2
 kubectl --context docker-desktop apply -f k8s/backend-service.yaml
 kubectl --context docker-desktop -n admin-portfolio rollout status deployment/backend --timeout=240s
 ```
 
-인프라 준비 확인은 최초 실행과 동일합니다. Kubernetes 모드에서는 `docker compose up -d`로 모든 서비스를 시작하지 않습니다. Compose 백엔드까지 시작하면 8080 충돌이 발생할 수 있습니다.
+인프라 준비 확인은 최초 실행과 동일합니다. 위 절차는 Deployment가 이미 존재할 때 사용하며, 현재 배포된 이미지 태그를 유지합니다. Deployment YAML의 기본 이미지를 그대로 재적용하면 Jenkins가 배포한 버전이 바뀔 수 있습니다. Kubernetes 모드에서는 `docker compose up -d`로 모든 서비스를 시작하지 않습니다. Compose 백엔드까지 시작하면 8080 충돌이 발생할 수 있습니다.
 
-## 3. 코드 변경 후 버전 업데이트
+## 3. 수동으로 버전 업데이트
+
+일상적인 코드 변경 배포는 [Jenkins 가이드](jenkins.md)를 사용합니다. 아래는 파이프라인을 사용하지 않고 직접 이미지를 생성·배포하는 절차입니다.
 
 기존 `v3`를 덮어쓰지 않고 다음 버전의 이미지를 만듭니다. 아래 `v4`는 다음 배포의 예시이며 아직 배포한 버전은 아닙니다.
 
@@ -246,7 +250,7 @@ kubectl --context docker-desktop -n admin-portfolio scale deployment/backend --r
 docker compose stop backend mysql redis kafka keycloak
 ```
 
-다음 실행에서 Deployment YAML을 `apply`하면 선언된 2개로 복원됩니다. 일상적인 종료에 Namespace 삭제, Kubernetes 클러스터 초기화, 볼륨 삭제를 사용하지 않습니다.
+다음 실행에서 `scale deployment/backend --replicas=2`를 사용하면 현재 이미지로 2개를 복원합니다. 일상적인 종료에 Namespace 삭제, Kubernetes 클러스터 초기화, 볼륨 삭제를 사용하지 않습니다.
 
 ### Compose 또는 Eclipse 방식으로 전환
 
@@ -257,7 +261,7 @@ kubectl --context docker-desktop -n admin-portfolio scale deployment/backend --r
 kubectl --context docker-desktop -n admin-portfolio delete service backend
 ```
 
-Compose 모드에서는 먼저 `bootJar`를 성공시킨 뒤 `docker compose up -d --build backend`를 실행합니다. Eclipse 모드는 Compose 인프라만 실행하고 [환경변수 설정](local-secrets.md) 후 Eclipse에서 시작합니다. 다시 Kubernetes 모드로 돌아갈 때는 다른 백엔드와 포트 연결을 종료하고 Deployment·Service YAML을 적용합니다.
+Compose 모드에서는 먼저 `bootJar`를 성공시킨 뒤 `docker compose up -d --build backend`를 실행합니다. Eclipse 모드는 Compose 인프라만 실행하고 [환경변수 설정](local-secrets.md) 후 Eclipse에서 시작합니다. 다시 Kubernetes 모드로 돌아갈 때는 다른 백엔드와 포트 연결을 종료하고 기존 Deployment를 2개로 scale한 다음 Service YAML을 적용합니다.
 
 ## 6. 실습에서 확인한 결과
 

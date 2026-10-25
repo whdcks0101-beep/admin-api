@@ -19,6 +19,7 @@ React 관리 화면은 별도 프로젝트이며, 이 디렉터리는 백엔드 
 | 주문 통계 | 이벤트 기반 일별 통계, 주문 번호 기준 중복 반영 방지 |
 | Outbox | 주문 이벤트·상품 캐시 삭제 요청 저장, DB 선점, 토큰 검증, 재시도와 만료 복구 |
 | 배포 | Docker 이미지, Kubernetes Pod 2개, 공유 세션, 상태 점검, 롤링 업데이트·롤백 |
+| CI/CD | Jenkins 전용 에이전트, 테스트 결과·JAR 보관, 빌드 번호별 이미지 생성, Kubernetes 배포 |
 
 요청 횟수 제한은 동일 요청의 중복 주문 생성 방지와 다릅니다.
 
@@ -31,12 +32,14 @@ React 관리 화면은 별도 프로젝트이며, 이 디렉터리는 백엔드 
 - Apache Kafka, Spring Kafka
 - JUnit 5, AssertJ, Mockito, MockMvc, H2, Testcontainers, Embedded Kafka
 - 로컬 인프라: Docker Compose, Docker Desktop Kubernetes
+- CI/CD: Jenkins Pipeline, GitHub
 
 하나의 Spring Boot 서비스를 Docker Desktop Kubernetes의 Pod 2개로 배포합니다. MySQL·Redis·Kafka·Keycloak은 Compose에서 실행하며, 독립 서비스로 분리한 MSA 구성은 아닙니다.
 
 ## 배포 문서
 
 - [Docker·Kubernetes 실행 가이드](docs/deployment.md): 최초 준비, 재실행, 이미지 업데이트, 롤백, 종료
+- [Jenkins 빌드·배포 가이드](docs/jenkins.md): 전용 에이전트, 인증정보, 수동 시작 파이프라인, 토큰 갱신
 - [실행 환경별 비밀값 전달](docs/local-secrets.md): Compose `.env`, Eclipse 환경변수, Kubernetes Secret
 - [Kafka·Outbox 설계](docs/kafka-outbox.md): 이벤트 처리와 재시도 설계
 

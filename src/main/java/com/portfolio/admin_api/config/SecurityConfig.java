@@ -49,6 +49,12 @@ public class SecurityConfig {
 						.authenticated()						
 						// 회원 관리는 조회를 포함해 관리자만 허용
 						.requestMatchers("/api/users", "/api/users/**").hasRole("ADMIN")
+						// 체험 관리자는 명시한 상품·재고 변경만 허용한다. ADMIN 권한은 부여하지 않는다.
+						.requestMatchers(HttpMethod.POST, "/api/products",
+						        "/api/products/{productId}/stock-in", "/api/products/{productId}/stock-out")
+						.hasAnyRole("ADMIN", "DEMO_ADMIN")
+						.requestMatchers(HttpMethod.PUT, "/api/products/{productId}")
+						.hasAnyRole("ADMIN", "DEMO_ADMIN")
 						// 그 외 API 조회
 						.requestMatchers(HttpMethod.GET, "/api/**").hasRole("USER")
 						// 주문 생성

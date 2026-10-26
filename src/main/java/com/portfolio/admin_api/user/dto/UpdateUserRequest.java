@@ -18,8 +18,8 @@ public record UpdateUserRequest(
         @NotBlank(message = "회원 구분은 필수입니다.")
         @Size(max = 20, message = "회원 구분은 20자 이하여야 합니다.")
         @Pattern(
-                regexp = "^(일반회원|우수회원|관리자)$",
-                message = "회원 구분은 일반회원, 우수회원, 관리자 중 하나여야 합니다."
+                regexp = "^(일반회원|우수회원|관리자|체험관리자)$",
+                message = "회원 구분은 일반회원, 우수회원, 관리자, 체험관리자 중 하나여야 합니다."
         )               
         String role
 ) {

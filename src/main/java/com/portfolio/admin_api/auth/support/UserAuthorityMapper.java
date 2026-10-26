@@ -17,6 +17,7 @@ public final class UserAuthorityMapper {
 
 		return switch (role) {
 		case "관리자" -> List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"));
+		case "체험관리자" -> List.of(new SimpleGrantedAuthority("ROLE_DEMO_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"));
 
 		case "일반회원", "우수회원" -> List.of(new SimpleGrantedAuthority("ROLE_USER"));
 

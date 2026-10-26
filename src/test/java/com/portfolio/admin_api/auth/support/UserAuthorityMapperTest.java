@@ -12,6 +12,14 @@ import org.springframework.security.core.GrantedAuthority;
 @ExtendWith(MockitoExtension.class)
 class UserAuthorityMapperTest {
 
+    @Test
+    @DisplayName("체험 관리자는 체험 권한과 사용자 권한만 가지며 운영 관리자 권한은 없다")
+    void demoAdminDoesNotReceiveAdminAuthority() {
+        assertThat(UserAuthorityMapper.toAuthorities("체험관리자"))
+            .extracting(GrantedAuthority::getAuthority)
+            .containsExactlyInAnyOrder("ROLE_DEMO_ADMIN", "ROLE_USER");
+    }
+
 	@Test
     @DisplayName("관리자는 관리자와 사용자 권한을 가진다")
     void 관리자는_관리자와_사용자_권한을_가진다() {

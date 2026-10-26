@@ -1,4 +1,6 @@
 /gradlew text eol=lf
 *.bat text eol=crlf
 *.jar binary
+*.pdf binary
+*.png binary
 /deploy/lightsail/* text eol=lf

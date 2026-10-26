@@ -1,0 +1,34 @@
+# Activated after local,docker. Infrastructure addresses come from docker;
+# public URLs, cookies and logging are overridden here.
+app:
+  frontend-origin: ${PUBLIC_ORIGIN}
+
+server:
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        secure: true
+        http-only: true
+        same-site: lax
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${PUBLIC_ORIGIN}/sso/realms/portfolio
+            authorization-uri: ${PUBLIC_ORIGIN}/sso/realms/portfolio/protocol/openid-connect/auth
+            token-uri: http://keycloak:8080/sso/realms/portfolio/protocol/openid-connect/token
+            user-info-uri: http://keycloak:8080/sso/realms/portfolio/protocol/openid-connect/userinfo
+            jwk-set-uri: http://keycloak:8080/sso/realms/portfolio/protocol/openid-connect/certs
+
+logging:
+  level:
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: OFF

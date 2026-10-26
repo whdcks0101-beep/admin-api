@@ -1,0 +1,27 @@
+{$PUBLIC_HOST} {
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    # Admin console is accessed through an SSH tunnel when needed.
+    @private path /sso/admin /sso/admin/* /sso/realms/master /sso/realms/master/* /actuator /actuator/*
+    handle @private {
+        respond "Not found" 404
+    }
+
+    handle /sso/* {
+        reverse_proxy keycloak:8080
+    }
+
+    @api path /api /api/* /login /login/* /logout /oauth2/* /error /default-ui.css
+    handle @api {
+        reverse_proxy backend:8080 {
+            header_up -Forwarded
+        }
+    }
+
+    handle {
+        reverse_proxy frontend:8080
+    }
+}

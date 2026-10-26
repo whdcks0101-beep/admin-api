@@ -1,6 +1,7 @@
 package com.portfolio.admin_api.config;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,6 +28,7 @@ public class SecurityConfig {
 		  , ApiAccessDeniedHandler apiAccessDeniedHandler
 		  , ObjectProvider<ClientRegistrationRepository> clientRegistrations	
 		  , ObjectProvider<PortfolioOidcUserService> oidcUserServices
+		  , @Value("${app.frontend-origin}") String frontendOrigin
 	) throws Exception {
 
 		http.cors(Customizer.withDefaults())
@@ -62,8 +64,8 @@ public class SecurityConfig {
 						.defaultAccessDeniedHandlerFor(apiAccessDeniedHandler,
 								PathPatternRequestMatcher.withDefaults().matcher("/api/**"))
 						.defaultAccessDeniedHandlerFor(new AccessDeniedHandlerImpl(), AnyRequestMatcher.INSTANCE))
-				.formLogin(form -> form.defaultSuccessUrl("http://localhost:5173", true))
-				.logout(logout -> logout.logoutSuccessUrl("http://localhost:5173"))
+				.formLogin(form -> form.defaultSuccessUrl(frontendOrigin, true))
+				.logout(logout -> logout.logoutSuccessUrl(frontendOrigin))
 				.httpBasic(Customizer.withDefaults());
 		
 		ClientRegistrationRepository registrations =
@@ -78,19 +80,19 @@ public class SecurityConfig {
 
 		    // SSO 로그인 사용자가 Keycloak 로그아웃까지 마친 뒤 돌아올 주소
 		    logoutSuccessHandler.setPostLogoutRedirectUri(
-		            "http://localhost:5173/"
+		            frontendOrigin + "/"
 		    );
 
 		    // 이메일·비밀번호 로그인 사용자가 로그아웃 후 돌아올 주소
 		    logoutSuccessHandler.setDefaultTargetUrl(
-		            "http://localhost:5173/"
+		            frontendOrigin + "/"
 		    );
 
 		    http.oauth2Login(oauth2 -> oauth2
 		            .userInfoEndpoint(userInfo -> userInfo
 		                    .oidcUserService(oidcUserService)
 		            )
-		            .defaultSuccessUrl("http://localhost:5173", true)
+		            .defaultSuccessUrl(frontendOrigin, true)
 		    );
 
 		    http.logout(logout -> logout

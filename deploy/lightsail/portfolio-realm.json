@@ -1,0 +1,26 @@
+{
+  "realm": "portfolio",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "bruteForceProtected": true,
+  "clients": [
+    {
+      "clientId": "admin-api",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "${KEYCLOAK_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["${PUBLIC_ORIGIN}/login/oauth2/code/keycloak"],
+      "webOrigins": ["${PUBLIC_ORIGIN}"],
+      "attributes": {
+        "post.logout.redirect.uris": "${PUBLIC_ORIGIN}/"
+      },
+      "defaultClientScopes": ["web-origins", "acr", "profile", "email", "roles"]
+    }
+  ]
+}

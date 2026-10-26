@@ -48,7 +48,8 @@ pipeline {
         stage('Docker Build') {
             steps {
                 sh '''
-                    docker build -t "admin-api:ci-${BUILD_NUMBER}" .
+                    IMAGE="admin-api:aws-${BUILD_NUMBER}-$(git rev-parse --short=12 HEAD)"
+                    docker build -t "$IMAGE" .
                 '''
             }
         }    
@@ -57,18 +58,14 @@ pipeline {
             steps {
                 withCredentials([
                     file(
-                        credentialsId: 'k8s-admin-portfolio',
-                        variable: 'KUBECONFIG'
+                        credentialsId: 'lightsail-ssh-key',
+                        variable: 'LIGHTSAIL_SSH_KEY'
                     )
                 ]) {
                     sh '''
-                        kubectl -n admin-portfolio set image \
-                            deployment/backend \
-                            backend="admin-api:ci-${BUILD_NUMBER}"
-
-                        kubectl -n admin-portfolio rollout status \
-                            deployment/backend \
-                            --timeout=180s
+                        set +x
+                        IMAGE="admin-api:aws-${BUILD_NUMBER}-$(git rev-parse --short=12 HEAD)"
+                        bash deploy/lightsail/jenkins-deploy.sh backend "$IMAGE"
                     '''
                 }
             }

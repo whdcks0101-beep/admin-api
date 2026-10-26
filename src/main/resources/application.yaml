@@ -6,6 +6,10 @@ spring:
   jpa:
     open-in-view: false
 
+app:
+  # Origin only, without a trailing slash. Override with APP_FRONTEND_ORIGIN in the cloud.
+  frontend-origin: http://localhost:5173
+
 management:
   endpoints:
    web:

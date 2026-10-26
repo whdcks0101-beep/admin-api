@@ -41,8 +41,8 @@ def page(num, label, title, subtitle):
     p(subtitle,top=110,size=10,color=MUTED)
     c.setStrokeColor(HexColor('#DCE5EA')); c.line(42,42,W-42,42)
     c.setFont('KR',8); c.setFillColor(MUTED)
-    c.drawString(42,27,'이종찬  |  백엔드 중심 개인 프로젝트  |  2026.10.26')
-    c.drawRightString(W-42,27,f'{num:02d} / 08')
+    c.drawString(42,27,'이종찬  |  백엔드 중심 개인 프로젝트  |  2026.10.27')
+    c.drawRightString(W-42,27,f'{num:02d} / 09')
 
 
 def section(title, text, top):
@@ -88,7 +88,7 @@ y=section('읽는 순서','구성도 → 업무 정합성 → Outbox와 멱등 �
 y=link('실행 서비스  https://13-124-81-142.sslip.io','https://13-124-81-142.sslip.io',y)
 y=link('Backend  github.com/whdcks0101-beep/admin-api','https://github.com/whdcks0101-beep/admin-api',y)
 y=link('Frontend  github.com/whdcks0101-beep/admin-frontend','https://github.com/whdcks0101-beep/admin-frontend',y)
-p('로그인은 사전 등록 방식입니다. 관리자 비밀번호는 공개하지 않습니다.',top=y+2,size=9,color=MUTED)
+p('공개 체험 관리자와 일반회원 로그인 정보는 마지막 페이지에서 확인하세요.',top=y+2,size=9,color=MUTED)
 c.showPage()
 
 page(2,'ARCHITECTURE','HTTPS 주소 하나로 연결','AWS Lightsail / Ubuntu / Docker Compose')
@@ -143,7 +143,7 @@ y=160
 for n,title,body in steps:
     box(42,y,511,64,n+'  '+title,body); y+=76
 y=section('추적 가능한 배포','aws-빌드번호-Git커밋 태그를 사용합니다. frontend와 backend를 각각 배포하고 서버 잠금으로 변경을 직렬화합니다. 단일 컨테이너 교체 중에는 잠시 연결이 끊길 수 있으며 실패 시 자동 롤백하지 않습니다.',y+7)
-y=section('테스트 실행 기록','2026-10-26 로컬 기본 테스트: 79개 중 60개 통과, 19개 조건부 건너뜀, 실패 0개. MySQL·실제 Redis 통합 테스트는 별도 활성화 대상입니다. 프론트 빌드에는 린트와 테스트 단계가 포함됩니다.',y)
+y=section('테스트 실행 기록','2026-10-26 로컬 기본 테스트: 88개 중 69개 통과, 19개 조건부 건너뜀, 실패 0개. MySQL·실제 Redis 통합 테스트는 별도 활성화 대상입니다. 프론트 빌드에는 린트와 테스트 단계가 포함됩니다.',y)
 section('클라우드 사용자 검증','백엔드·프론트 Jenkins 작업 성공 후 실제 로그인·목록 조회를 확인했습니다. 주문 생성, 재고 차감, Kafka를 통한 날짜별 통계 반영과 SSO 로그아웃도 확인했습니다.',y)
 c.showPage()
 
@@ -160,5 +160,14 @@ box(42,443,511,86,'확인한 업무 흐름','주문·재고·Outbox 커밋 → R
 section('화면에서 확인한 결과','2026-10-26 주문 1건이 통계에 반영된 실제 조회 결과입니다. 비동기 처리이므로 주문 저장 직후에는 잠시 지연될 수 있습니다.',554)
 y=link('구현 사례와 소스: GitHub backend README','https://github.com/whdcks0101-beep/admin-api',713)
 link('실행 서비스: https://13-124-81-142.sslip.io','https://13-124-81-142.sslip.io',y)
+c.showPage()
+page(9,'PUBLIC DEMO','직접 로그인하고 권한 비교하기','운영 관리자와 분리한 공개 체험 계정')
+y=link('서비스 열기  https://13-124-81-142.sslip.io','https://13-124-81-142.sslip.io',158)
+box(42,205,511,95,'체험 관리자 | 이메일 로그인 / SSO','아이디: demo-admin@example.com<br/>비밀번호: PortfolioDemo2026!',True)
+box(42,317,511,95,'일반회원 | 이메일 로그인','아이디: user1@gmail.com<br/>비밀번호: normalUser1234')
+y=section('공통으로 체험할 기능','상품·재고 조회, 주문 생성·상세 조회, 날짜별 주문 통계를 확인할 수 있습니다.',437)
+y=section('체험 관리자에게 추가로 허용','상품 등록·수정과 입출고를 허용합니다. 일반회원은 상품 변경 버튼이 표시되지 않으며 API 직접 요청도 거부됩니다.',y)
+y=section('계정 관리 권한 분리','회원 관리와 권한 변경은 실제 운영 관리자만 허용합니다. 체험 관리자와 일반회원은 회원 API 직접 호출도 HTTP 403으로 차단됩니다.',y)
+p('상품·재고·주문은 방문자들이 함께 쓰는 샘플 데이터입니다. 개인정보는 입력하지 마세요. 실제 운영 관리자 비밀번호는 공개하지 않습니다.',top=y,size=9,color=MUTED)
 c.showPage(); c.save()
 print(OUT)

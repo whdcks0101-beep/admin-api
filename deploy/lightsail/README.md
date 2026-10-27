@@ -93,4 +93,4 @@ python3 create-first-admin.py
 - 외부 `/actuator/health`, `/sso/admin/`: HTTP 404.
 - OIDC discovery의 issuer가 공개 HTTPS 주소와 일치하고, 백엔드에서 Keycloak 로그인 화면으로 이동하는 것까지 확인했다.
 - 세션 쿠키의 Secure, HttpOnly 속성 확인.
-- 클라우드 사용자 생성, 실제 로그인 후 업무 기능, SSO 계정 연결은 아직 진행 전이다.
+- 이 최초 기동 확인 시점에는 클라우드 사용자 생성과 SSO 계정 연결 전이었다. 이후 실제 로그인·주문·통계·SSO 확인을 완료했으며, 공개 체험 계정의 2026-10-27 검증 결과는 [체험 안내](../../docs/portfolio/demo-access.md#aws-검증-기록-2026-10-27)에 기록했다.

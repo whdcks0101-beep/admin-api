@@ -16,7 +16,7 @@
 
 **구현:** 주문과 전송할 이벤트를 DB에 함께 저장한다(Transactional Outbox). 전송 작업자(Relay)가 `FOR UPDATE SKIP LOCKED`로 다른 작업자가 잠근 행을 건너뛰고 한 건을 가져온다. 처리 중 상태(`PROCESSING`)와 담당 작업을 구분하는 토큰(claim token)을 기록한다. 전송은 선점 트랜잭션 밖에서 수행한다. 완료·재시도 기록은 소유 토큰과 유효기간을 확인하고 DB 시간을 기준으로 판정한다. 만료된 선점은 복구한다.
 
-**확장:** `OutboxEventSender` 구현체를 Registry로 찾아 주문 이벤트 전송과 상품 캐시 삭제 요청을 처리한다. 주문 서비스는 `OrderEventStore` 포트에 의존한다. 적용 범위는 주문 이벤트 저장 경계이며 전체 JPA 의존성을 분리한 구조로 주장하지 않는다.
+**확장:** `OutboxEventSender` 구현체를 Registry로 찾아 주문 이벤트 전송과 상품 캐시 삭제 요청을 처리한다. 주문 서비스는 `OrderEventStore` 인터페이스(포트)를 호출한다. 적용 범위는 주문 이벤트 저장 경계이며 전체 JPA 의존성을 분리한 구조로 주장하지 않는다.
 
 **검증:** 주문과 Outbox의 동시 커밋·롤백, 선점·소유권·만료 복구 관련 테스트와 다중 인스턴스 실습을 수행했다.
 
@@ -36,9 +36,9 @@
 
 **문제:** 외부 인증 성공만으로 서비스 관리자 권한을 부여하면 안 된다. 인스턴스를 교체하거나 여러 인스턴스를 사용해도 로그인 상태를 공유할 필요가 있다.
 
-**구현:** Spring Security와 Keycloak OIDC를 연결하고 `issuer + subject`로 서비스 회원을 조회한다. 권한은 우리 DB에서 적용한다. 세션은 Spring Session Redis로 공유한다. CSRF 보호, API 401/403 응답, 자기 계정 삭제·권한 해제 방지를 적용했다.
+**구현:** Spring Security와 Keycloak OIDC를 연결하고 인증기관 주소(issuer)와 사용자 고유 ID(subject)로 서비스 회원을 조회한다. 권한은 우리 DB에서 적용한다. 세션은 Spring Session Redis로 공유한다. 다른 사이트에서 로그인된 브라우저를 악용해 변경 요청을 보내는 공격 방어(CSRF 보호), API 401/403 응답, 자기 계정 삭제·권한 해제 방지를 적용했다.
 
-**검증:** 미연결 SSO 계정 거부 테스트, AWS에서 일반 로그인·SSO 로그인·관리자 메뉴·SSO 로그아웃을 확인했다. 현재는 관리자 사전 등록 방식이다.
+**검증:** 미연결 SSO 계정 거부 테스트, AWS에서 일반 로그인·SSO 로그인·관리자 메뉴·SSO 로그아웃을 확인했다. 현재는 서비스 회원과 SSO 사용자를 미리 등록해 연결하는 방식이다. 공개 체험 관리자도 같은 방식으로 연결했다.
 
 소스: [ExternalIdentityService](../../src/main/java/com/portfolio/admin_api/auth/service/ExternalIdentityService.java), [SecurityConfig](../../src/main/java/com/portfolio/admin_api/config/SecurityConfig.java)
 
@@ -50,7 +50,7 @@
 
 ## 6. 배포 과정을 반복 가능한 작업으로 만들기
 
-GitHub의 백엔드·프론트 저장소를 Jenkins가 checkout한다. 테스트 후 빌드 번호와 커밋으로 이미지 태그를 생성하고 SSH로 AWS에 전송한다. 서버는 배포 잠금으로 두 배포가 동시에 실행되지 않게 하고 대상 컨테이너만 교체한 뒤 healthcheck를 확인한다. 성공한 이미지 태그만 `.env`에 기록한다.
+GitHub의 백엔드·프론트 저장소를 Jenkins가 checkout한다. 테스트 후 빌드 번호와 커밋으로 이미지 태그를 생성하고 SSH로 AWS에 전송한다. 서버는 배포 잠금으로 두 배포가 동시에 실행되지 않게 하고 대상 컨테이너만 교체한 뒤 컨테이너가 정상적으로 실행됐는지 상태 점검(healthcheck)을 확인한다. 성공한 이미지 태그만 `.env`에 기록한다.
 
 Jenkins는 개발 PC에서, 서비스는 AWS Lightsail에서 실행한다. Caddy가 HTTPS를 처리하고 공개 주소 하나로 React·API·SSO에 연결한다. Jenkins에서 두 작업의 배포 성공과 배포 후 로그인·목록 조회를 확인했다.
 

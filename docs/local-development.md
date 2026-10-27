@@ -1,5 +1,7 @@
 # 로컬 개발 및 테스트 안내
 
+[쉬운 용어 설명](portfolio/terms.md) · [공개 서비스 체험](portfolio/demo-access.md)
+
 ## 로컬 실행
 
 아래 명령은 Windows PowerShell 기준입니다.

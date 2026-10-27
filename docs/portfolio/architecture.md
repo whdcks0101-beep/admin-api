@@ -6,7 +6,7 @@
 flowchart TB
   B[브라우저] -->|HTTPS 443| C
   subgraph AWS[AWS Lightsail · Ubuntu · Docker Compose]
-    C[Caddy · TLS / Reverse Proxy]
+    C[Caddy · HTTPS 암호화 / 요청 전달]
     C -->|화면| F[React 정적 파일 · Nginx]
     C -->|API / 로그인| A[Spring Boot]
     C -->|SSO| K[Keycloak]
@@ -24,7 +24,7 @@ flowchart TB
 
 AWS는 단일 Lightsail 서버의 Compose 구성이다. 공개 진입점은 Caddy의 80/443이며 백엔드·DB·Redis·Kafka는 내부 네트워크에서 통신한다. Keycloak의 관리 경로는 외부 Caddy에서 차단한다. HTTPS 인증서는 Caddy가 발급·갱신한다.
 
-브라우저의 화면과 API는 같은 HTTPS 출처를 사용한다. Spring은 전달된 프록시 헤더로 원래 HTTPS 주소를 해석하며 세션 쿠키에는 Secure·HttpOnly를 적용한다.
+브라우저의 화면과 API는 프로토콜·호스트·포트가 같은 주소(같은 출처)를 사용한다. Spring은 전달된 프록시 헤더로 원래 HTTPS 주소를 해석하며 세션 쿠키에는 Secure·HttpOnly를 적용한다.
 
 ## 주문 생성과 비동기 통계
 
@@ -56,14 +56,14 @@ Kafka 전송과 MySQL 완료 기록은 함께 성공하거나 함께 취소되�
 flowchart LR
   B[브라우저] -->|SSO 로그인| K[Keycloak 인증]
   K -->|Authorization Code| A[Spring Security OIDC]
-  A -->|issuer + subject 조회| L[(user_external_identities)]
+  A -->|인증기관 주소와 사용자 ID 조회| L[(user_external_identities)]
   L --> U[(users · 서비스 권한)]
-  U --> S[관리자 / 일반 사용자 권한 적용]
+  U --> S[운영 관리자 / 체험 관리자 / 일반회원 권한 적용]
   A --> R[(Redis 공유 세션)]
 ```
 
-Keycloak 계정과 서비스 회원은 별개다. 사전 등록한 계정만 연결하며 이메일 일치만으로 자동 연결하지 않는다. 서비스 관리자 권한은 Keycloak 관리 콘솔 권한과 구분한다.
+인증기관 주소(issuer)와 그 기관이 발급한 사용자 고유 ID(subject)를 함께 사용해 회원을 찾는다. Keycloak 계정과 서비스 회원은 별개다. 사전 등록한 계정만 연결하며 이메일 일치만으로 자동 연결하지 않는다. 서비스 관리자 권한은 Keycloak 관리 콘솔 권한과 구분한다.
 
 ## 로컬 Kubernetes 실습
 
-Docker Desktop Kubernetes에서 동일 백엔드 Deployment를 2개 Pod로 실행했다. Redis 세션 공유, Pod 재생성, readiness/liveness, 롤링 업데이트와 롤백을 확인했다. 이 구성은 로컬 실습이며 AWS EKS 배포나 여러 물리 서버 구성으로 표현하지 않는다.
+Docker Desktop Kubernetes에서 동일 백엔드 Deployment를 2개 Pod로 실행했다. Redis 세션 공유, Pod 재생성, 요청을 받을 준비 상태와 실행 상태 점검(readiness/liveness), 순차 버전 교체(롤링 업데이트)와 이전 버전 복구(롤백)을 확인했다. 이 구성은 로컬 실습이며 AWS EKS 배포나 여러 물리 서버 구성으로 표현하지 않는다.

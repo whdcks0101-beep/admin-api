@@ -17,6 +17,8 @@
 
 ![AWS 상품·재고 관리 화면](docs/portfolio/images/inventories.png)
 
+처음 보는 용어는 [쉬운 용어 설명](docs/portfolio/terms.md)에서 예시와 함께 확인할 수 있습니다.
+
 ## 핵심 구현
 
 | 해결한 문제 | 적용한 설계 |
@@ -24,10 +26,10 @@
 | 동시 재고 변경과 주문 실패 시 부분 저장 | 재고 변경 충돌 감지(`@Version`), 주문·재고·전송할 이벤트를 함께 저장하거나 취소 |
 | DB 저장 성공 후 이벤트 전송 실패 | 전송할 이벤트를 DB에 저장하고 실패 시 재시도(Transactional Outbox) |
 | 여러 전송 작업자가 같은 이벤트에 접근 | 다른 작업자가 잡은 행은 건너뛰고, 처리 토큰과 유효기간을 확인 |
-| 이벤트 재전송에 따른 통계 중복 | 주문 번호 고유키로 같은 주문의 통계 중복 저장 방지(멱등 처리) |
-| 외부 인증과 서비스 권한 구분 | Keycloak OIDC, `issuer + subject` 회원 연결, Spring Security |
-| 인스턴스 간 세션·요청 횟수 공유 | Spring Session Redis, Lua 요청 제한 |
-| 수동 배포의 반복 작업 | Jenkins 테스트·이미지 생성·SSH 전송·AWS healthcheck |
+| 이벤트 재전송에 따른 통계 중복 | 같은 주문 번호는 통계에 한 번만 저장 |
+| 외부 인증과 서비스 권한 구분 | Keycloak에서 로그인한 사용자를 우리 DB 회원과 연결하고, 서비스 권한은 별도 적용 |
+| 여러 백엔드의 로그인 상태·요청 횟수 공유 | Redis에 로그인 상태와 요청 횟수를 모아 관리 |
+| 수동 배포의 반복 작업 | Jenkins가 테스트·이미지 생성·서버 전송·배포 후 상태 확인을 순서대로 실행 |
 
 [핵심 구현 사례와 소스 보기](docs/portfolio/case-studies.md)
 
@@ -51,7 +53,7 @@ flowchart LR
   J -->|빌드 이미지 SSH 배포| AWS
 ```
 
-AWS에서는 Spring Boot 한 인스턴스와 MySQL·Redis·Kafka·Keycloak을 Compose로 실행합니다. 별도로 **로컬 Docker Desktop Kubernetes의 백엔드 2개 Pod**에서 세션 공유·자동 복구·롤링 업데이트·롤백을 실습했습니다.
+AWS에서는 Spring Boot 프로그램 하나와 MySQL·Redis·Kafka·Keycloak을 Compose로 실행합니다. 별도로 **로컬 Docker Desktop Kubernetes의 백엔드 2개 Pod**에서 로그인 상태 공유·실행 단위 자동 복구·순차 버전 교체·이전 버전 복구를 실습했습니다.
 
 [상세 구성도 및 주문·SSO 흐름](docs/portfolio/architecture.md)
 
@@ -90,7 +92,7 @@ docker compose up -d mysql redis kafka keycloak
 .\gradlew.bat bootRun
 ```
 
-로컬 Keycloak의 realm·client·사용자 연결을 준비해야 합니다. 프론트는 별도 저장소에서 `npm ci`, `npm run dev`로 실행합니다. 이미 Kubernetes나 다른 서버가 8080을 사용 중이면 실행 방식을 먼저 전환합니다.
+로컬 Keycloak의 인증 영역(realm), 로그인할 애플리케이션 등록(client), 사용자 연결을 준비해야 합니다. 프론트는 별도 저장소에서 `npm ci`, `npm run dev`로 실행합니다. 이미 Kubernetes나 다른 서버가 8080을 사용 중이면 실행 방식을 먼저 전환합니다.
 
 - [로컬 개발·테스트 상세 안내](docs/local-development.md)
 - [Docker·Kubernetes 실행](docs/deployment.md)
@@ -114,4 +116,4 @@ AWS에서 일반 로그인·SSO 로그인·로그아웃·관리자 권한·주�
 - [Kafka·Outbox 상세 설계](docs/kafka-outbox.md)
 - [제출용 PDF](output/pdf/admin-portfolio.pdf)
 
-주문 이벤트 저장 경계에 `OrderEventStore` 포트와 Command/Result를 적용했습니다. 현재 서비스는 하나의 Spring Boot 애플리케이션이며, Kafka를 사용한다는 이유로 MSA로 표현하지 않습니다. Outbox는 재전송을 허용하고 통계 소비자에서 중복 반영을 방지합니다.
+주문 서비스는 이벤트 저장 방식에 직접 의존하지 않고 `OrderEventStore` 인터페이스를 호출합니다. 서비스 입력·결과 객체(Command/Result)를 API 요청·응답 객체와 나눴습니다. 현재는 하나의 Spring Boot 프로그램으로 실행하며, 여러 독립 서비스로 나눈 구조(MSA)는 아닙니다. 저장된 이벤트는 다시 전송될 수 있지만 통계 처리에서 중복 반영을 막습니다.

@@ -13,8 +13,8 @@ flowchart TB
     A -->|주문 / 재고 / Outbox / 통계| M[(MySQL)]
     K -->|별도 keycloak DB| M
     A -->|세션 / 캐시 / 요청 제한| R[(Redis)]
-    A -->|Outbox Relay 발행| Q[Kafka · order-created]
-    Q -->|독립 Consumer Group| A
+    A -->|저장된 이벤트 전송| Q[Kafka · order-created]
+    Q -->|업무별 수신 그룹| A
     A -->|OIDC 토큰 교환| K
   end
   G[GitHub · backend / frontend] --> J[Jenkins · 개발 PC]
@@ -33,22 +33,22 @@ sequenceDiagram
   participant U as 사용자
   participant A as OrderService
   participant D as MySQL
-  participant R as Outbox Relay
+  participant R as 전송 작업자(Relay)
   participant K as Kafka
-  participant S as 통계 Consumer
+  participant S as 통계 처리기(Consumer)
   U->>A: 주문 요청
   A->>D: 주문 / 재고 차감 / Outbox 저장
   Note over A,D: 하나의 DB 트랜잭션으로 커밋 또는 롤백
   A-->>U: 주문 생성 결과
-  R->>D: PENDING 선점, PROCESSING + 토큰 저장
-  Note over R,D: 짧은 선점 트랜잭션 종료 후 전송
+  R->>D: 대기 작업 가져오기, 처리 중 상태와 담당 토큰 저장
+  Note over R,D: 담당 작업 기록을 확정하고 DB 잠금을 푼 뒤 전송
   R->>K: OrderCreatedEvent
   R->>D: 소유 토큰·유효기간 검사 후 PUBLISHED
   K->>S: 주문 이벤트 전달
   S->>D: order_id 고유키로 중복 통계 저장 방지
 ```
 
-Kafka 전송과 MySQL 완료 기록은 하나의 원자적 커밋이 아니다. 전송 성공 후 완료 기록이 실패하면 재전송될 수 있으므로, 통계 저장에서 동일 주문을 다시 반영하지 않도록 설계했다.
+Kafka 전송과 MySQL 완료 기록은 함께 성공하거나 함께 취소되는 하나의 작업으로 묶여 있지 않다. 전송 성공 후 완료 기록이 실패하면 재전송될 수 있으므로, 통계 저장에서 동일 주문을 다시 반영하지 않도록 설계했다.
 
 ## SSO와 서비스 권한
 

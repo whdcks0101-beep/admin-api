@@ -1,6 +1,6 @@
 # Admin Portfolio | 주문·재고 운영 관리
 
-주문과 재고의 정합성, 비동기 이벤트 처리, 인증·권한, 클라우드 배포를 구현한 백엔드 중심 개인 프로젝트입니다. React 관리 화면에서 업무 흐름을 직접 확인할 수 있습니다.
+주문 실패 시 재고를 함께 되돌리고, 같은 이벤트가 다시 와도 통계가 중복 반영되지 않도록 구현한 백엔드 중심 개인 프로젝트입니다. React 관리 화면에서 업무 흐름을 직접 확인할 수 있습니다.
 
 **[실행 서비스](https://13-124-81-142.sslip.io) · [프론트 저장소](https://github.com/whdcks0101-beep/admin-frontend) · [포트폴리오 PDF](output/pdf/admin-portfolio.pdf)**
 
@@ -21,10 +21,10 @@
 
 | 해결한 문제 | 적용한 설계 |
 | --- | --- |
-| 동시 재고 변경과 주문 실패 시 부분 저장 | JPA `@Version`, 주문·재고·Outbox의 단일 트랜잭션 |
-| DB 저장 성공 후 이벤트 전송 실패 | Transactional Outbox, 재시도·선점 만료 복구 |
-| 다중 Relay의 같은 작업 처리 | `FOR UPDATE SKIP LOCKED`, claim token, DB 시간 기반 소유권 검사 |
-| 이벤트 재전송에 따른 통계 중복 | 주문 번호 고유키와 멱등 저장 |
+| 동시 재고 변경과 주문 실패 시 부분 저장 | 재고 변경 충돌 감지(`@Version`), 주문·재고·전송할 이벤트를 함께 저장하거나 취소 |
+| DB 저장 성공 후 이벤트 전송 실패 | 전송할 이벤트를 DB에 저장하고 실패 시 재시도(Transactional Outbox) |
+| 여러 전송 작업자가 같은 이벤트에 접근 | 다른 작업자가 잡은 행은 건너뛰고, 처리 토큰과 유효기간을 확인 |
+| 이벤트 재전송에 따른 통계 중복 | 주문 번호 고유키로 같은 주문의 통계 중복 저장 방지(멱등 처리) |
 | 외부 인증과 서비스 권한 구분 | Keycloak OIDC, `issuer + subject` 회원 연결, Spring Security |
 | 인스턴스 간 세션·요청 횟수 공유 | Spring Session Redis, Lua 요청 제한 |
 | 수동 배포의 반복 작업 | Jenkins 테스트·이미지 생성·SSH 전송·AWS healthcheck |
@@ -43,8 +43,8 @@ flowchart LR
     A --> M[(MySQL)]
     K --> M
     A --> R[(Redis)]
-    A -->|Outbox Relay| Q[Kafka]
-    Q -->|통계 Consumer| A
+    A -->|저장된 이벤트 전송| Q[Kafka]
+    Q -->|통계 처리| A
     A -->|OIDC| K
   end
   G[GitHub] --> J[Jenkins / 개발 PC]

@@ -25,7 +25,7 @@ Jenkins 관리 → Credentials → System → Global credentials → Add Credent
 
 `jenkins-deploy.sh`는 자격 증명의 키를 임시 디렉터리에 권한 600으로 복사한다. `docker save`를 SSH의 `sudo docker load`로 전송하며 성공·실패 모두 임시 키를 정리한다. 개인키나 `.env`는 Docker 이미지에 넣지 않는다.
 
-서버 `apply-image.sh`는 서비스·태그를 검사하고 `flock`으로 두 작업의 배포를 직렬화한다. 대상 서비스만 교체하고 healthcheck를 기다린다. 성공한 이미지 태그만 `.env`에 원자적으로 기록한다. 기존 DB·Kafka·Redis 및 다른 서비스의 이미지 태그는 유지한다.
+서버 `apply-image.sh`는 서비스·태그를 검사하고 `flock`으로 두 작업이 동시에 배포하지 않도록 한다. 대상 서비스만 교체하고 healthcheck를 기다린다. 성공한 이미지 태그만 `.env`에 기록하며, 파일을 통째로 교체해 일부만 기록된 상태가 남지 않도록 한다. 기존 DB·Kafka·Redis 및 다른 서비스의 이미지 태그는 유지한다.
 
 단일 컨테이너 교체 시 잠시 연결이 끊길 수 있다. 상태 점검 실패 시 Jenkins는 실패하며 자동 롤백하지 않는다. 이때 `.env`에는 이전 태그가 남지만 실행 중인 컨테이너는 실패한 새 이미지일 수 있다. 서버에서 로그를 확인한 다음 `.env`의 이전 이미지로 다음 명령을 실행해 복구한다.
 
